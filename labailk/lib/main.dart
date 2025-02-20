@@ -1,125 +1,345 @@
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const TrainTrackerApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class TrainTrackerApp extends StatelessWidget {
+  const TrainTrackerApp({Key? key}) : super(key: key);
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Modern Train Tracker',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+        primaryColor: Colors.amber[700],
+        colorScheme: ColorScheme.fromSwatch(
+          primarySwatch: Colors.amber,
+          accentColor: Colors.amberAccent,
+        ),
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const TrainTrackingScreen(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class TrainTrackingScreen extends StatefulWidget {
+  const TrainTrackingScreen({Key? key}) : super(key: key);
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  _TrainTrackingScreenState createState() => _TrainTrackingScreenState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _TrainTrackingScreenState extends State<TrainTrackingScreen> with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  final List<String> stations = ["Station A", "Station B", "Station C", "Station D", "Final Destination"];
+  int currentStationIndex = 1;
+  double progress = 0.4;
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(seconds: 2),
+      vsync: this,
+    )..repeat(reverse: true);
   }
 
   @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  // Main UI Builder
+  @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Colors.amber.shade50, Colors.orange.shade50],
+          ),
+        ),
+        child: SafeArea(
+          child: CustomScrollView(
+            slivers: [
+              _buildAppBar(), // App Bar UI
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      _buildSearchSection(), // Search section for station input
+                      const SizedBox(height: 24),
+                      _buildJourneyTimeline(), // Journey timeline with progress
+                      const SizedBox(height: 24),
+                      _buildJourneyStats(), // Stats on journey time and distance
+                      const SizedBox(height: 24),
+                      _buildMapButton(), // Button to track the train on the map
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
+    );
+  }
+
+  // App Bar UI
+  Widget _buildAppBar() {
+    return SliverAppBar(
+      expandedHeight: 120.0,
+      floating: false,
+      pinned: true,
+      backgroundColor: Colors.amber[700],
+      flexibleSpace: FlexibleSpaceBar(
+        title: const Text(
+          'Live Train Tracker',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        background: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Colors.amber[700]!, Colors.amber[600]!],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Search UI Section for stations
+  Widget _buildSearchSection() {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            _buildSearchField("From Station", Icons.train),
+            const SizedBox(height: 16),
+            _buildSearchField("To Station", Icons.location_on),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Search Field Component (For From Station & To Station)
+  Widget _buildSearchField(String hint, IconData icon) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: TextField(
+        decoration: InputDecoration(
+          hintText: hint,
+          prefixIcon: Icon(icon, color: Colors.amber[700]),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        ),
+      ),
+    );
+  }
+
+  // Journey Timeline UI
+  Widget _buildJourneyTimeline() {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: List.generate(stations.length, (index) {
+            bool isCurrentStation = index == currentStationIndex;
+            bool isPastStation = index < currentStationIndex;
+            
+            return Column(
+              children: [
+                Row(
+                  children: [
+                    _buildTimelineNode(isCurrentStation, isPastStation),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            stations[index],
+                            style: TextStyle(
+                              fontWeight: isCurrentStation ? FontWeight.bold : FontWeight.normal,
+                              fontSize: 16,
+                            ),
+                          ),
+                          if (isCurrentStation) _buildCurrentStationIndicator(),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                if (index < stations.length - 1) _buildTimelineConnector(isPastStation),
+              ],
+            );
+          }),
+        ),
+      ),
+    );
+  }
+
+  // Timeline Node (Circle indicator for each station)
+  Widget _buildTimelineNode(bool isCurrent, bool isPast) {
+    return Container(
+      width: 24,
+      height: 24,
+      decoration: BoxDecoration(
+        color: isCurrent ? Colors.amber[700] : isPast ? Colors.green : Colors.grey[300],
+        shape: BoxShape.circle,
+      ),
+      child: isCurrent
+          ? AnimatedBuilder(
+              animation: _animationController,
+              builder: (context, child) {
+                return Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.amber[700]!.withOpacity(0.5),
+                      width: 4 * _animationController.value,
+                    ),
+                  ),
+                );
+              },
+            )
+          : Icon(
+              isPast ? Icons.check : Icons.circle,
+              size: 12,
+              color: Colors.white,
+            ),
+    );
+  }
+
+  // Timeline Connector (Line between stations)
+  Widget _buildTimelineConnector(bool isPast) {
+    return Container(
+      margin: const EdgeInsets.only(left: 11),
+      width: 2,
+      height: 32,
+      color: isPast ? Colors.green : Colors.grey[300],
+    );
+  }
+
+  // Current Station Indicator (ETA display)
+  Widget _buildCurrentStationIndicator() {
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Row(
+        children: [
+          Icon(Icons.access_time, size: 16, color: Colors.amber[700]),
+          const SizedBox(width: 4),
+          Text(
+            'Arriving in 5 mins',
+            style: TextStyle(
+              color: Colors.amber[700],
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Stats for Time to Destination & Distance Remaining
+  Widget _buildJourneyStats() {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildStatCard('Time to Destination', '1h 30m', Icons.timer),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: _buildStatCard('Distance Remaining', '50 km', Icons.directions_train),
+        ),
+      ],
+    );
+  }
+
+  // Stats Card UI (for Journey Time and Distance)
+  Widget _buildStatCard(String title, String value, IconData icon) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Icon(icon, color: Colors.amber[700], size: 28),
+            const SizedBox(height: 8),
             Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+              title,
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 12,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              value,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
+
+  // Button to track on map (Currently Placeholder)
+  Widget _buildMapButton() {
+    return ElevatedButton(
+      onPressed: () {
+        // TODO: Implement map view, fetch train route data from an API
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.amber[700],
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: const [
+          Icon(Icons.map),
+          SizedBox(width: 8),
+          Text('Track on Map'),
+        ],
+      ),
+    );
+  }
+
+  // Here you can make API calls to fetch data like stations, journey details, and real-time updates.
+  // For example:
+  // Future<void> fetchJourneyDetails() async {
+  //   final response = await http.get(Uri.parse('YOUR_API_URL'));
+  //   if (response.statusCode == 200) {
+  //     // Parse the data and update state
+  //   } else {
+  //     throw Exception('Failed to load journey details');
+  //   }
+  // }
 }
